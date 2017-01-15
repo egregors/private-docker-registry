@@ -1,0 +1,33 @@
+version: '2'
+services:
+  registry:
+    restart: always
+    image: registry:2
+    ports:
+      - 5000:5000
+    environment:
+      REGISTRY_HTTP_TLS_CERTIFICATE: /certs/live/<your_domain>/fullchain.pem
+      REGISTRY_HTTP_TLS_KEY: /certs/live/<your_domain>/privkey.pem
+      REGISTRY_AUTH: htpasswd
+      REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
+      REGISTRY_AUTH_HTPASSWD_REALM: Registry Realm
+    volumes:
+      - ./registry:/var/lib/registry
+      - ./letsencrypt/:/certs
+      - ./auth:/auth
+
+  lets-nginx:
+    image: smashwilson/lets-nginx
+    restart: always
+    volumes:
+      - "./cache:/cache"
+      - "./letsencrypt:/etc/letsencrypt"
+    links:
+      - registry
+    environment:
+      EMAIL: "<your_email>"
+      DOMAIN: "<your_domain>"
+      UPSTREAM: "registry:80"
+    ports:
+      - "80:80"
+      - "443:443"
